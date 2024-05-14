@@ -1,0 +1,50 @@
+#1- Dependency
+FROM node:21-alpine3.19 as deps
+
+WORKDIR /usr/src/app
+
+COPY package.json ./
+COPY package-lock.json ./
+
+RUN npm install
+
+
+
+
+#2 - Builder : Construye la aplicación
+FROM node:21-alpine3.19 as build
+WORKDIR /usr/src/app
+
+# Copiar de deps , los modulos de node
+COPY --from=deps /usr/src/app/node_modules ./node_modules
+## Compiar todo el codigo fuente de la aplicación : todo lo que no este definido en dockerignore
+COPY . .
+
+# RUN npm run test
+RUN npm run build
+
+# Limpar los modulos de node que no se necesitan, dejar solo los de producción
+RUN npm ci -f --only=production & npm cache clean --force
+
+RUN npx prisma generate
+
+#3 - Crear la imgagen final de docker
+FROM node:21-alpine3.19 as prod
+WORKDIR /usr/src/app
+
+
+# Copiar de deps , los modulos de node solo de prod
+COPY --from=build /usr/src/app/node_modules ./node_modules
+
+# Copiar la carpta de dist
+COPY --from=build /usr/src/app/dist ./dist
+
+ENV NODE_ENV=production
+
+#Se crea un usuario para no usar el root
+USER node
+
+
+EXPOSE 3001
+
+CMD [ "node", "dist/main.js" ]

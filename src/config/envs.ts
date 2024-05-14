@@ -4,14 +4,16 @@ import * as joi from 'joi';
 
 interface EnvVars {
     PORT:number;
-    // DATABASE_URL:string;
+    DATABASE_URL:string;
     NATS_SERVERS:string[];
+    KEY_SECRET: string;
 }
 
 const envsSchema = joi.object({
     PORT: joi.number().required(),
-    // DATABASE_URL: joi.string().required(),
+    DATABASE_URL: joi.string().required(),
     NATS_SERVERS: joi.array().items(joi.string().required()),
+    KEY_SECRET: joi.string().required(),
 
 }).unknown(true)
 
@@ -24,9 +26,11 @@ if(error) throw new Error(`Config validation error: ${error.message}`);
 
 const envVars: EnvVars = value;
 
+
 export const envs = {
     port: envVars.PORT,
-    // databaseUrl : envVars.DATABASE_URL,
+    databaseUrl : envVars.DATABASE_URL,
     natsServers : envVars.NATS_SERVERS,
+    keySecret: envVars.KEY_SECRET,
 }
 
